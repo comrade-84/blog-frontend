@@ -1,0 +1,33 @@
+:root {
+  --primary-color: rgb(38, 96, 221); /* Dark pink */
+  --text-light: #ffffff;
+}
+
+body {
+  background-color: var(--text-light);
+  color: #333;
+}
+
+.navbar-custom {
+  background-color: var(--primary-color);
+}
+
+.navbar-custom .nav-link,
+.navbar-custom .navbar-brand {
+  color: var(--text-light) !important;
+}
+
+.navbar-custom .nav-link:hover {
+  opacity: 0.8;
+}
+
+.btn-primary-custom {
+  background-color: var(--primary-color);
+  color: var(--text-light);
+  border: none;
+}
+
+.btn-primary-custom:hover {
+  background-color: #0f0ce0; /* slightly darker pink */
+  color: var(--text-light);
+}

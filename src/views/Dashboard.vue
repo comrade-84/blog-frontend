@@ -6,15 +6,6 @@
       <button type="button" class="btn-close" @click="error = null"></button>
     </div>
 
-    <!-- Welcome Section -->
-    <welcome-section />
-
-    <!-- User Profile -->
-    <user-profile 
-      :total-posts="stats.total"
-      :total-views="totalViews"
-    />
-
     <!-- Loading State for Analytics -->
     <div v-if="loading.stats" class="row g-4 mb-4">
       <div v-for="i in 3" :key="i" class="col-12 col-md-4">
@@ -29,7 +20,58 @@
     </div>
 
     <!-- Analytics Cards Section -->
-    <dashboard-stats v-else :stats="stats" />
+    <div v-else class="row g-4 mb-4">
+      <!-- Total Published Posts Card -->
+      <div class="col-12 col-md-4">
+        <div class="card analytics-card published-card h-100">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <h6 class="card-subtitle mb-2">Published Posts</h6>
+                <h2 class="card-title mb-0">{{ stats.published || 0 }}</h2>
+              </div>
+              <div class="icon-container">
+                <i class="bi bi-file-earmark-text"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Total Draft Posts Card -->
+      <div class="col-12 col-md-4">
+        <div class="card analytics-card draft-card h-100">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <h6 class="card-subtitle mb-2">Draft Posts</h6>
+                <h2 class="card-title mb-0">{{ stats.drafts || 0 }}</h2>
+              </div>
+              <div class="icon-container">
+                <i class="bi bi-file-earmark"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Total Posts Card -->
+      <div class="col-12 col-md-4">
+        <div class="card analytics-card total-card h-100">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <h6 class="card-subtitle mb-2">Total Posts</h6>
+                <h2 class="card-title mb-0">{{ stats.total || 0 }}</h2>
+              </div>
+              <div class="icon-container">
+                <i class="bi bi-files"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <!-- Posts Table Section -->
     <div class="card">
@@ -48,7 +90,6 @@
             <span class="visually-hidden">Loading...</span>
           </div>
         </div>
-      
 
         <!-- No Posts Message -->
         <div v-else-if="!posts.length" class="text-center py-5 text-muted">
@@ -63,8 +104,6 @@
               <tr>
                 <th>Post Title</th>
                 <th>Views</th>
-                <th>Likes</th>
-                <th>Comments</th>
                 <th>Status</th>
                 <th>Actions</th>
               </tr>
@@ -74,15 +113,7 @@
                 <td>{{ post.title }}</td>
                 <td>
                   <i class="bi bi-eye me-2"></i>
-                  {{ post.views || 0 }}
-                </td>
-                <td>
-                  <i class="bi bi-heart me-2"></i>
-                  {{ post.likes_count || 0 }}
-                </td>
-                <td>
-                  <i class="bi bi-chat me-2"></i>
-                  {{ post.comments_count || 0 }}
+                  {{ post.views }}
                 </td>
                 <td>
                   <span
@@ -167,18 +198,9 @@
 <script>
 import { PostService } from '@/services/api'
 import { Modal } from 'bootstrap'
-import { useUserStore } from '@/stores/user'
-import WelcomeSection from '@/components/dashboard/WelcomeSection.vue'
-import UserProfile from '@/components/dashboard/UserProfile.vue'
-import DashboardStats from '@/components/dashboard/DashboardStats.vue'
 
 export default {
   name: 'Dashboard',
-  components: {
-    WelcomeSection,
-    UserProfile,
-    DashboardStats
-  },
   data() {
     return {
       stats: {
@@ -197,15 +219,8 @@ export default {
       deleteModal: null,
     }
   },
-  computed: {
-    totalViews() {
-      return this.posts.reduce((total, post) => total + (post.views || 0), 0);
-    }
-  },
   created() {
     this.fetchPosts()
-    const userStore = useUserStore()
-    userStore.loadUserFromStorage()
   },
   mounted() {
     this.deleteModal = new Modal(document.getElementById('deleteModal'))
@@ -215,9 +230,8 @@ export default {
       try {
         this.loading.posts = true
         this.loading.stats = true
-        const response = await PostService.getUserPosts()
-        // Check if the response contains paginated data or direct array
-        this.posts = response.data.data.data || response.data.data
+        const response = await PostService.getAll({ user_posts: true })
+        this.posts = response.data.data.data
         this.updateStats()
       } catch (err) {
         this.error = 'Failed to load your posts. Please try again later.'
@@ -244,8 +258,7 @@ export default {
     async publishPost(post) {
       try {
         this.loading.action = post.id
-        // Only send the status update
-        await PostService.update(post.id, { status: 'published' })
+        await PostService.update(post.id, { ...post, status: 'published' })
         await this.fetchPosts() // This will update both posts and stats
       } catch (err) {
         this.error = 'Failed to publish post. Please try again.'

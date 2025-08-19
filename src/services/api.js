@@ -46,12 +46,9 @@ export const PostService = {
     });
   },
   update(id, data) {
-    // If there's a featured_image, use multipart/form-data, otherwise use JSON
-    const headers = data.featured_image
-      ? { "Content-Type": "multipart/form-data" }
-      : { "Content-Type": "application/json" };
-    
-    return api.post(`/posts/${id}?_method=PUT`, data, { headers });
+    return api.post(`/posts/${id}?_method=PUT`, data, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
   },
   delete(id) {
     return api.delete(`/posts/${id}`);
@@ -67,9 +64,9 @@ export const PostService = {
     });
   },
   getUserPosts() {
-    return api.get('/posts/user', { 
+    return api.get('/posts', { 
       params: { 
-        per_page: 'all'
+        user_posts: true 
       }
     });
   }

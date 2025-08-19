@@ -46,9 +46,12 @@ export const PostService = {
     });
   },
   update(id, data) {
-    return api.post(`/posts/${id}?_method=PUT`, data, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
+    // If there's a featured_image, use multipart/form-data, otherwise use JSON
+    const headers = data.featured_image
+      ? { "Content-Type": "multipart/form-data" }
+      : { "Content-Type": "application/json" };
+    
+    return api.post(`/posts/${id}?_method=PUT`, data, { headers });
   },
   delete(id) {
     return api.delete(`/posts/${id}`);
@@ -64,9 +67,9 @@ export const PostService = {
     });
   },
   getUserPosts() {
-    return api.get('/posts', { 
+    return api.get('/posts/user', { 
       params: { 
-        user_posts: true 
+        per_page: 'all'
       }
     });
   }

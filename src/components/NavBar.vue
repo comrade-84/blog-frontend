@@ -8,42 +8,41 @@
       <button
         class="navbar-toggler"
         type="button"
-        data-bs-toggle="collapse"
-        data-bs-target="#navbarNav"
+        @click="isNavOpen = !isNavOpen"
       >
         <span class="navbar-toggler-icon"></span>
       </button>
 
       <!-- Nav Links -->
-      <div class="collapse navbar-collapse" id="navbarNav">
+      <div class="collapse navbar-collapse" :class="{ 'show': isNavOpen }" id="navbarNav">
         <ul class="navbar-nav ms-auto align-items-lg-center">
           <li class="nav-item">
-            <router-link class="nav-link" to="/">Home</router-link>
+            <router-link class="nav-link" to="/" @click="closeNav">Home</router-link>
           </li>
           <li v-if="!isLoggedIn" class="nav-item">
-            <a class="nav-link" href="#blogs">Blogs</a>
+            <a class="nav-link" href="#blogs" @click="closeNav">Blogs</a>
           </li>
           <li v-if="isLoggedIn" class="nav-item">
-            <router-link to="/dashboard" class="nav-link" href="">Dashboard</router-link>
+            <router-link to="/dashboard" class="nav-link" @click="closeNav">Dashboard</router-link>
           </li>
           <template v-if="!isLoggedIn">
             <li class="nav-item">
-              <a href="#features" class="nav-link" to="/features">Features</a >
+              <a href="#features" class="nav-link" @click="closeNav">Features</a>
             </li>
             <li class="nav-item">
-              <router-link class="nav-link" to="/login">Login</router-link>
+              <router-link class="nav-link" to="/login" @click="closeNav">Login</router-link>
             </li>
             <li class="nav-item">
-              <router-link to="/register" class="btn btn-primary ms-lg-2">Sign Up</router-link>
+              <router-link to="/register" class="btn btn-primary ms-lg-2" @click="closeNav">Sign Up</router-link>
             </li>
           </template>
 
           <template v-else>
             <li class="nav-item">
-              <router-link class="nav-link" to="/create-post">Create Post</router-link>
+              <router-link class="nav-link" to="/create-post" @click="closeNav">Create Post</router-link>
             </li>
             <li class="nav-item">
-              <button @click="logout" class="btn  bg-danger text-light ms-lg-2">Logout</button>
+              <button @click="logout" class="btn bg-danger text-light ms-lg-2">Logout</button>
             </li>
           </template>
         </ul>
@@ -60,6 +59,7 @@ export default {
   data() {
     return {
       isLoggedIn: !!localStorage.getItem("token"),
+      isNavOpen: false,
     };
   },
   methods: {
@@ -72,7 +72,11 @@ export default {
       localStorage.removeItem("token");
       localStorage.removeItem("user");
       this.isLoggedIn = false;
+      this.isNavOpen = false;
       this.$router.push("/login");
+    },
+    closeNav() {
+      this.isNavOpen = false;
     },
   },
   watch: {

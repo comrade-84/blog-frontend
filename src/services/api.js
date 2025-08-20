@@ -35,15 +35,25 @@ export const AuthService = {
 // Post Services
 export const PostService = {
   getAll(params = {}) {
-    return api.get("/posts", { params });
+    return api.get("/posts", { 
+      params: {
+        ...params,
+        with: 'category,user' // Always include category and user relations
+      }
+    });
   },
   getById(id) {
     return api.get(`/posts/${id}`);
   },
   create(data) {
-    return api.post("/posts", data, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
+    // Ensure we're sending with the correct content type and that the backend knows to expect JSON
+    const config = {
+      headers: { 
+        "Content-Type": "multipart/form-data",
+        "Accept": "application/json"
+      }
+    };
+    return api.post("/posts", data, config);
   },
   update(id, data) {
     // If there's a featured_image, use multipart/form-data, otherwise use JSON

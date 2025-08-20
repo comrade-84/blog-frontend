@@ -1,109 +1,173 @@
 <template>
-  <div>
-    <!-- HERO SECTION (Visible only for guests) -->
-  <section v-if="!isLoggedIn" class="hero-section">
-    <div class="container hero-content">
-      <div class="hero-text">
-        <h1>
-          Welcome to <span class="highlight">BlogSphere</span>
-        </h1>
-        <p class="subtitle">
-          Share your voice with the world. Create posts, build your audience, 
-          and manage your blog with ease.
-        </p>
-        <router-link to="/register" class="btn-get-started">
-          Get Started 🚀
-        </router-link>
-        <p class="supporting-text">
-          Join 10,000+ creators already publishing great content.
-        </p>
-      </div>
-      <div class="hero-image">
-        <img src="../assets/images/blog_landing.png" alt="Hero Illustration" />
-      </div>
-    </div>
-  </section>
-
-  <futures-section v-if="!isLoggedIn"/>
-
-    <!-- FEATURED POSTS -->
-    <section id="blogs" class="container my-5">
-      <h3 class="mb-4" style="color: var(--primary-color)">Featured Posts</h3>
-      <div class="row">
-        <div class="col-md-4" v-for="post in featuredPosts" :key="post.id">
-          <div class="card h-100 shadow-sm">
-            <img
-              :src="post.featured_image || defaultImage"
-              class="card-img-top"
-              alt="Post image"
-            />
-            <div class="card-body">
-              <h5 class="card-title">{{ post.title }}</h5>
-              <p class="card-text">{{ truncate(post.body, 100) }}</p>
-              <button @click="openPostModal(post)" class="btn btn-primary-custom">
-                Read More
-              </button>
-            </div>
-          </div>
+  <div class="blog-home">
+    <!-- Hero Section (visible only for guests) -->
+    <section v-if="!isLoggedIn" class="hero-section">
+      <div class="container hero-content">
+        <div class="hero-text">
+          <h1>
+            Welcome to <span class="highlight">BlogSphere</span>
+          </h1>
+          <p class="subtitle">
+            Share your voice with the world. Create posts, build your audience, 
+            and manage your blog with ease.
+          </p>
+          <router-link to="/register" class="btn-get-started">
+            Get Started 🚀
+          </router-link>
+          <p class="supporting-text">
+            Join 10,000+ creators already publishing great content.
+          </p>
+        </div>
+        <div class="hero-image">
+          <img src="../assets/images/blog_landing.png" alt="Hero Illustration">
         </div>
       </div>
     </section>
 
-    <!-- ALL POSTS -->
-    <section class="container border my-5">
-      <h3 class="mb-4" style="color: var(--primary-color)">All Posts</h3>
-      <div class="row">
-        <template v-if="posts && posts.length > 0">
-          <div class="col-md-4 mb-4" v-for="post in posts" :key="post.id">
-            <div class="card h-100 shadow-sm">
-              <img
-                :src="post.featured_image || defaultImage"
-                class="card-img-top"
-                alt="Post image"
-              />
-              <div class="card-body">
-                <h5 class="card-title">{{ post.title }}</h5>
-                <p class="card-text">{{ truncate(post.body, 100) }}</p>
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                  <button @click="openPostModal(post)" class="btn btn-primary-custom">
+    <!-- Features Section -->
+    <futures-section v-if="!isLoggedIn"/>
+
+    <!-- FEATURED POSTS -->
+    <section id="blogs" class="container my-5">
+      <h3 class="mb-4" style="color: var(--primary-color)">Featured Posts</h3>
+      
+      <!-- Loading State -->
+      <div v-if="loadingFeatured" class="text-center">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+      </div>
+
+      <!-- Posts Grid -->
+      <div v-else-if="featuredPosts.length" class="row">
+        <div v-for="post in featuredPosts" :key="post.id" class="col-md-4">
+          <div class="card h-100 shadow-sm">
+            <img
+              :src="getImageUrl(post.featured_image)"
+              class="card-img-top"
+              alt="Post image"
+              @error="$event.target.src = defaultImage"
+            >
+            <div class="card-body">
+              <h5 class="card-title">{{ post.title || 'Untitled Post' }}</h5>
+              <span v-if="post.category?.name" class="badge bg-secondary mb-2 d-block">
+                {{ post.category.name }}
+              </span>
+              <p class="card-text">{{ truncate(post.body || '', 100) }}</p>
+              <div class="d-flex flex-column gap-3">
+                <div class="d-flex align-items-center gap-2">
+                  <button @click="openPostModal(post)" class="btn btn-primary-custom flex-shrink-0">
                     Read More
                   </button>
-                  <div class="d-flex align-items-center gap-3">
-                    <button @click="handleLike(post)" class="btn btn-link text-decoration-none">
+                  <div class="d-flex gap-3 ms-3">
+                    <button @click="handleLike(post)" class="btn btn-link text-decoration-none p-0">
                       <i class="bi" :class="post.liked ? 'bi-heart-fill text-danger' : 'bi-heart'">&nbsp;</i>
-                      <span>{{ post.likes_count || 0 }}</span>
+                      <span>{{ post.likes_count || 0 }} likes</span>
                     </button>
-                    <button @click="openCommentModal(post)" class="btn btn-link text-decoration-none">
+                    <button @click="openCommentModal(post)" class="btn btn-link text-decoration-none p-0">
                       <i class="bi bi-chat">&nbsp;</i>
-                      <span>{{ post.comments_count || 0 }}</span>
+                      <span>{{ post.comments_count || 0 }} comments</span>
                     </button>
                   </div>
                 </div>
-                <hr class="my-2">
-                <div class="d-flex align-items-center">
-                  <img 
-                    :src="post.user?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(post.user?.name || '')}&background=random`" 
-                    class="rounded-circle me-2"
-                    width="32"
-                    height="32"
-                    :alt="post.user?.name"
-                  >
-                  <div class="small">
-                    <div class="fw-medium text-body">{{ post.user?.name }}</div>
-                    <div class="text-muted">{{ formatDate(post.created_at) }}</div>
+                <div class="d-flex align-items-center border-top pt-3">
+                  <div class="d-flex align-items-center">
+                    <img 
+                      :src="post.user?.avatar_url || defaultAvatar" 
+                      class="rounded-circle me-2" 
+                      alt="Author" 
+                      style="width: 35px; height: 35px; object-fit: cover;"
+                    >
+                    <div>
+                      <div class="fw-medium">{{ post.user?.name }}</div>
+                      <div class="text-muted small">
+                        {{ formatDate(post.created_at) }}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
-        </template>
-        <div v-else class="col-12 text-center">
-          <p>No posts available.</p>
+        </div>
+      </div>
+      <div v-else class="text-center">
+        <p>No featured posts available.</p>
+      </div>
+    </section>
+
+    <!-- ALL POSTS -->
+    <!-- ALL POSTS -->
+    <section class="container my-5">
+      <h3 class="mb-4" style="color: var(--primary-color)">All Posts</h3>
+      
+      <!-- Loading State -->
+      <div v-if="loading" class="text-center">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Loading...</span>
         </div>
       </div>
 
+      <!-- Posts Grid -->
+      <div v-else-if="posts && posts.length > 0" class="row">
+        <div v-for="post in posts" :key="post.id" class="col-md-4 mb-4">
+          <div class="card h-100 shadow-sm">
+            <img
+              :src="getImageUrl(post.featured_image)"
+              class="card-img-top"
+              alt="Post image"
+              @error="$event.target.src = defaultImage"
+            >
+            <div class="card-body">
+              <h5 class="card-title">{{ post.title }}</h5>
+              <span v-if="post.category" class="badge bg-secondary mb-2">
+                {{ post.category.name }}
+              </span>
+              <p class="card-text">{{ truncate(post.body, 100) }}</p>
+              <div class="d-flex flex-column gap-3">
+                <div class="d-flex align-items-center gap-2">
+                  <button @click="openPostModal(post)" class="btn btn-primary-custom flex-shrink-0">
+                    Read More
+                  </button>
+                  <div class="d-flex gap-3 ms-3">
+                    <button @click="handleLike(post)" class="btn btn-link text-decoration-none p-0">
+                      <i class="bi" :class="post.liked ? 'bi-heart-fill text-danger' : 'bi-heart'">&nbsp;</i>
+                      <span>{{ post.likes_count || 0 }} likes</span>
+                    </button>
+                    <button @click="openCommentModal(post)" class="btn btn-link text-decoration-none p-0">
+                      <i class="bi bi-chat">&nbsp;</i>
+                      <span>{{ post.comments_count || 0 }} comments</span>
+                    </button>
+                  </div>
+                </div>
+                <div class="d-flex align-items-center border-top pt-3">
+                  <div class="d-flex align-items-center">
+                    <img 
+                      :src="post.user?.avatar_url || defaultAvatar" 
+                      class="rounded-circle me-2" 
+                      alt="Author" 
+                      style="width: 35px; height: 35px; object-fit: cover;"
+                    >
+                    <div>
+                      <div class="fw-medium">{{ post.user?.name }}</div>
+                      <div class="text-muted small">
+                        {{ formatDate(post.created_at) }}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div v-else-if="!loading" class="text-center my-5">
+        <p>No posts available.</p>
+      </div>
+    </section>
+
       <!-- PAGINATION -->
-      <nav v-if="totalPages > 1">
+      <nav v-if="!loading && totalPages > 1" class="mt-4">
         <ul class="pagination justify-content-center">
           <li class="page-item" :class="{ disabled: page === 1 }">
             <button class="page-link" @click="changePage(page - 1)">Prev</button>
@@ -121,7 +185,6 @@
           </li>
         </ul>
       </nav>
-    </section>
 
     <!-- Comment Modal -->
     <div class="modal fade" id="commentModal" tabindex="-1">
@@ -304,7 +367,10 @@ export default {
       featuredPosts: [],
       page: 1,
       totalPages: 1,
-      defaultImage: "https://via.placeholder.com/600x400?text=Blog+Post",
+      loading: true,
+      loadingFeatured: true,
+      defaultImage: "https://picsum.photos/600/400",
+      defaultAvatar: "https://picsum.photos/100/100",
       commentModal: null,
       postModal: null,
       selectedPost: null,
@@ -318,6 +384,12 @@ export default {
     isLoggedIn() {
       return !!localStorage.getItem("token");
     },
+    getImageUrl() {
+      return (imageUrl) => imageUrl || this.defaultImage;
+    },
+    getUserAvatar() {
+      return (user) => user?.avatar_url || this.defaultAvatar;
+    }
   },
   methods: {
  truncate(text, length) {
@@ -325,40 +397,76 @@ export default {
   return text.length > length ? text.substring(0, length) + "..." : text;
 },
 
+    formatDate(date) {
+      if (!date) return '';
+      const options = { year: 'numeric', month: 'short', day: 'numeric' };
+      return new Date(date).toLocaleDateString(undefined, options);
+    },
+
     async fetchPosts() {
       try {
+        this.loading = true;
         console.log('Fetching posts with page:', this.page);
         const res = await PostService.getAll({ 
           page: this.page,
-          status: 'published' // Only fetch published posts
+          status: 'published',
+          sort: 'latest',
+          with: 'category,user'
         });
-        console.log('Fetched posts response:', JSON.stringify(res.data, null, 2));
         
-        if (res.data?.success && res.data?.data?.data && Array.isArray(res.data.data.data)) {
-          this.posts = res.data.data.data;
-          this.totalPages = res.data.data.last_page || 1;
-        } else {
-          console.error('Invalid posts data format:', res.data);
-          this.posts = [];
-          this.totalPages = 1;
+        let postsData = [];
+        let totalPages = 1;
+        
+        if (res.data?.data?.data && Array.isArray(res.data.data.data)) {
+          postsData = res.data.data.data.map(post => ({
+            ...post,
+            category: post.category || null,
+            user: post.user || null,
+            likes_count: post.likes_count || 0,
+            comments_count: post.comments_count || 0
+          }));
+          totalPages = res.data.data.last_page || 1;
         }
+        
+        this.posts = postsData;
+        this.totalPages = totalPages;
       } catch (error) {
         console.error('Error fetching posts:', error);
         this.posts = [];
         this.totalPages = 1;
+      } finally {
+        this.loading = false;
       }
     },
     async fetchFeatured() {
       try {
+        this.loadingFeatured = true;
         const res = await PostService.getAll({ 
           per_page: 3,
-          status: 'published' // Only fetch published posts
+          status: 'published',
+          sort: 'latest',
+          with: 'category,user'
         });
-        const featuredData = res.data?.data?.data || [];
-        this.featuredPosts = Array.isArray(featuredData) ? featuredData : [];
+        
+        // Ensure we have valid data and transform it if needed
+        let featuredData = [];
+        if (res.data?.data?.data && Array.isArray(res.data.data.data)) {
+          featuredData = res.data.data.data.map(post => ({
+            ...post,
+            category: post.category || null,
+            user: post.user || null,
+            likes_count: post.likes_count || 0,
+            comments_count: post.comments_count || 0
+          }));
+        }
+        
+        console.log('Featured posts data:', featuredData);
+        this.featuredPosts = featuredData;
       } catch (error) {
         console.error('Error fetching featured posts:', error);
         this.featuredPosts = [];
+      } finally {
+        this.loadingFeatured = false;
       }
     },
     changePage(newPage) {
